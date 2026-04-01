@@ -174,5 +174,8 @@ int main(){
 
     printf("\nIt's over gang!\n");
 
+    free(snake_pos);
+    free(map);
+
     return 0;
 }
