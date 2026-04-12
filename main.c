@@ -7,6 +7,14 @@
 #include <time.h>
 #include <stdlib.h>
 
+
+long long current_time_ms() {
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft);
+    ULONGLONG t = ((ULONGLONG)ft.dwHighDateTime << 32) | ft.dwLowDateTime;
+    return (long long)(t / 10000 - 11644473600000ULL); // Convert to Unix epoch ms
+}
+
 typedef struct 
 {
     int x;
@@ -24,14 +32,9 @@ typedef struct
 
 int apples = 0;
 
-void clear(){
-    #if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
-        system("clear");
-    #endif
-
-    #if defined(_WIN32) || defined(_WIN64)
-        system("cls");
-    #endif
+void clear() {
+    COORD coord = {0, 0};
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
 void PrintMap(char *map, int width, int height){
@@ -138,9 +141,12 @@ int main(){
         .map_size = size,
         .moveDir = {0, 0},
     };
-    int prev_time = 0;
     Vector2 snake_last_dir = snake.moveDir;
 
+    long long prev_time = current_time_ms();
+    long long interval = 200; // milliseconds between updates
+
+    
     while (1)
     {
         if (_kbhit()) 
@@ -151,8 +157,10 @@ int main(){
             if (key == 'a' && snake_last_dir.x !=  1) snake.moveDir = (Vector2){-1,  0};
             if (key == 'd' && snake_last_dir.x != -1) snake.moveDir = (Vector2){ 1,  0};
         }
-        
-        if (prev_time != time(NULL))
+
+        long long now = current_time_ms();
+
+        if (now - prev_time >= interval)
         {
             clear();
             if (MoveSnake(map, &snake, width, heigth, &isCollision))
@@ -163,8 +171,10 @@ int main(){
             snake_last_dir = snake.moveDir;
             printf("Apples eaten: %d\n", apples);
             PrintMap(map, width, heigth);
-            prev_time = time(NULL);
+            prev_time = current_time_ms();
         }
+
+
 
         if (isCollision)
         {
